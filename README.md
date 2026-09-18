@@ -178,16 +178,3 @@ OnyxUI:Notify({
 ```
 
 ---
-
-## 🛠️ Repository Structure
-
-```
-├── OnyxUI.luau          # Standalone compiled library
-├── Showcase.luau        # Full demo showcasing all features & controls
-└── README.md            # Documentation & usage guide
-```
-
----
-
-## 📄 License
-MIT License. Free for open-source and personal use.
