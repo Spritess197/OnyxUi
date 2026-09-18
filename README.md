@@ -1,38 +1,21 @@
-# OnyxUI 🪨
+# Onyx
 
-> **OnyxUI** is a modern, senior-engineered, macOS-inspired UI library for Luau / Roblox. Crafted with strict minimalism, pixel-perfect geometry, responsive controls, and high-performance micro-interactions.
+Simple, dark and fast UI library for Luau / Roblox. Built with clean geometry, low memory footprint, responsive drag/resize and custom micro-interactions.
 
----
+## Installation
 
-## ✨ Features
-
-- **macOS Sequoia Window Frame**:
-  - Interactive traffic lights (Close, Minimize, Maximize/Windowed).
-  - Native window dragging with drag un-maximize (standard macOS behavior).
-  - Bottom-right corner resize handle (`ResizeGrip`) with configurable constraints.
-  - Floor size clamped to default window dimensions (`DefaultSize`).
-  - Minimized floating widget with live FPS and Network/Data ping statistics.
-- **Rich Control Suite**:
-  - **Toggles**: Smooth animations, supporting inline Colorpickers and inline Keybind badges.
-  - **Sliders**: Drag & manual numeric text entry, custom formatting & suffix support.
-  - **Dropdowns**: Popups with automated z-index management, single and multi-selection.
-  - **Keybinds**: Single-key badges with `[None]` minimum floor sizing, dead-center text alignment, automatic key conflict prevention (`DisallowDuplicates`), and Roblox Escape menu suppression.
-  - **Colorpickers**: Inline and standalone HSV palette, RGB text inputs, and real-time accent binding.
-  - **Switchers (Segmented Controls)**: iOS/macOS-styled segmented buttons with sliding selector.
-  - **Buttons & Input Boxes**: Modern styled text inputs and action buttons with responsive hover tweens.
-  - **Notifications (Toasts)**: Non-intrusive floating toasts with progress duration bar, custom accent colors, and multiple indicator styles (`Pill`, `Dot`, `Bar`).
-
----
-
-## 🚀 Quick Start
-
-### Direct Loadstring (from GitHub)
 ```luau
-local OnyxUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/<YourUsername>/OnyxUI/main/OnyxUI.luau"))()
+local Onyx = loadstring(game:HttpGet("https://raw.githubusercontent.com/Spritess197/OnyxUi/refs/heads/main/Onyx.luau"))()
+```
 
-local Window = OnyxUI:CreateWindow({
-    Title = "OnyxUI Application",
-    Subtitle = "macOS Sequoia Edition",
+## Basic Example
+
+```luau
+local Onyx = loadstring(game:HttpGet("https://raw.githubusercontent.com/Spritess197/OnyxUi/refs/heads/main/Onyx.luau"))()
+
+local Window = Onyx:CreateWindow({
+    Title = "Onyx Interface",
+    Subtitle = "v1.0",
     Size = UDim2.fromOffset(880, 560),
     MaxSize = Vector2.new(1400, 900),
     SidebarWidth = 210,
@@ -46,135 +29,201 @@ local Window = OnyxUI:CreateWindow({
         ShowPing = true,
     },
 })
-```
 
----
+Window:CreateTab("Main", function(Tab)
+    local Left, Right = Tab:AddColumns(2, 8)
 
-## 📖 API Documentation
-
-### 1. Window Creation
-```luau
-local Window = OnyxUI:CreateWindow({
-    Title = string,
-    Subtitle = string?,
-    Size = UDim2?,              -- Default: UDim2.fromOffset(880, 560)
-    MaxSize = Vector2?,         -- Default: Vector2.new(1500, 1000)
-    SidebarWidth = number?,     -- Default: 210
-    TabHeight = number?,        -- Default: 36
-    ToggleKey = Enum.KeyCode?,  -- Default: Enum.KeyCode.RightShift
-    OnClose = (() -> ())?,      -- Callback when close traffic light button is clicked
-    Minimize = {
-        Position = UDim2?,
-        Style = "Rectangle" | "Circle",
-        Text = string?,
-        ShowFps = boolean?,
-        ShowPing = boolean?,
-    }
-})
-```
-
-### 2. Creating Tabs & Columns
-```luau
-Window:CreateTab("Combat", function(CombatTab)
-    -- Dual column layout (2 columns with 8px gap)
-    local LeftColumn, RightColumn = CombatTab:AddColumns(2, 8)
-
-    LeftColumn:AddSection("Aimbot Settings", function(Card)
-        Card:SetIndicatorStyle("Dot") -- "Dot", "Pill", "Bar"
+    Left:AddSection("Combat", function(Card)
+        Card:SetIndicatorStyle("Dot")
 
         Card:AddToggle({
-            Name = "Enable Aimbot",
+            Name = "Aimbot",
             Default = false,
-            Callback = function(Value: boolean)
-                print("Aimbot:", Value)
+            Keybind = Enum.KeyCode.E,
+            Color = Color3.fromRGB(59, 130, 246),
+            Callback = function(state)
+                print("Aimbot state:", state)
+            end,
+        })
+
+        Card:AddSlider({
+            Name = "Smoothness",
+            Min = 1,
+            Max = 20,
+            Default = 8,
+            Suffix = "x",
+            Callback = function(value)
+                print("Smoothness:", value)
+            end,
+        })
+    end)
+
+    Right:AddSection("Settings", function(Card)
+        Card:AddKeybind({
+            Name = "Windowed / Maximize",
+            Default = Enum.KeyCode.K,
+            DisallowDuplicates = true,
+            OnPress = function()
+                Window:Maximize()
+            end,
+        })
+
+        Card:AddDropdown({
+            Name = "Target Part",
+            Items = {"Head", "Torso", "HumanoidRootPart"},
+            Default = "Head",
+            Callback = function(selected)
+                print("Target:", selected)
             end,
         })
     end)
 end)
 ```
 
-### 3. Controls Reference
+## API Reference
 
-#### Toggle with Inline Keybind & Colorpicker
+### CreateWindow
+
+```luau
+local Window = Onyx:CreateWindow({
+    Title = "Window Title",
+    Subtitle = "Optional subtitle",
+    Size = UDim2.fromOffset(880, 560),       -- Default size and resize floor
+    MaxSize = Vector2.new(1400, 900),        -- Max bounds
+    SidebarWidth = 210,
+    TabHeight = 36,
+    ToggleKey = Enum.KeyCode.RightShift,
+    OnClose = function() end,                -- Fires when close button is pressed
+    Minimize = {
+        Position = UDim2.new(0, 14, 0, 50),
+        Style = "Rectangle",                 -- "Rectangle" or "Circle"
+        Text = "N",                          -- Widget logo text
+        ShowFps = true,
+        ShowPing = true,
+        ShowDataPing = false,
+    },
+})
+```
+
+Window methods:
+- `Window:Maximize()` - toggles windowed / maximized state.
+- `Window:Minimize()` - minimizes to floating widget.
+- `Window:Restore()` - restores from widget.
+- `Window:Toggle()` - toggles minimize / restore.
+- `Window:SetTitle(title)` - updates window title.
+- `Window:Destroy()` - cleans up maids, instances and connections.
+
+### Tabs and Columns
+
+```luau
+Window:CreateTab("Visuals", function(Tab)
+    -- Creates responsive columns (count, gapOffset)
+    local Col1, Col2 = Tab:AddColumns(2, 8)
+end)
+```
+
+### Sections (Cards)
+
+```luau
+Col1:AddSection("Section Name", function(Card)
+    -- Indicator style for row elements: "Dot", "Pill", "Bar"
+    Card:SetIndicatorStyle("Dot")
+end)
+```
+
+### Toggle
+
+Supports standalone toggles, or inline colorpickers and keybinds on the same row.
+
 ```luau
 Card:AddToggle({
-    Name = "Visual ESP",
+    Name = "Player ESP",
     Default = true,
-    Color = Color3.fromRGB(59, 130, 246),
-    ColorCallback = function(NewColor: Color3)
-        print("ESP Color:", NewColor)
-    end,
-    Keybind = Enum.KeyCode.V,
-    KeybindCallback = function(Key: Enum.KeyCode)
-        print("ESP Keybind:", Key)
-    end,
-    Callback = function(State: boolean)
-        print("ESP Toggled:", State)
-    end,
+    -- Optional inline colorpicker
+    Color = Color3.fromRGB(255, 60, 60),
+    ColorCallback = function(color) end,
+    -- Optional inline keybind
+    Keybind = Enum.KeyCode.X,
+    KeybindCallback = function(key) end,
+    Callback = function(state) end,
 })
 ```
 
-#### Slider
+### Slider
+
 ```luau
 Card:AddSlider({
-    Name = "Field of View",
-    Min = 30,
-    Max = 120,
-    Default = 90,
+    Name = "WalkSpeed",
+    Min = 16,
+    Max = 150,
+    Default = 24,
     Step = 1,
-    Suffix = "°",
-    Callback = function(Value: number)
-        print("FOV:", Value)
-    end,
+    Suffix = " spd",
+    Callback = function(val) end,
 })
 ```
 
-#### Keybind
+### Keybind
+
+Single-key badge with automatic centering and minimum width floor matching `[None]`. Automatically avoids duplicate binds and suppresses the Roblox Escape menu when clearing.
+
 ```luau
 Card:AddKeybind({
-    Name = "Maximize / Windowed",
-    Default = Enum.KeyCode.K,
+    Name = "Toggle Menu",
+    Default = Enum.KeyCode.RightShift,
     DisallowDuplicates = true,
-    OnPress = function()
-        Window:Maximize()
-    end,
+    OnPress = function() end,
+    Callback = function(key) end,
 })
 ```
 
-#### Dropdown
+### Dropdown
+
 ```luau
 Card:AddDropdown({
-    Name = "Target Hitbox",
-    Items = { "Head", "Torso", "HumanoidRootPart" },
-    Default = "Head",
+    Name = "Priority",
+    Items = {"Closest", "Lowest HP", "Crosshair"},
+    Default = "Closest",
     MultiSelect = false,
-    Callback = function(Selected: string)
-        print("Hitbox:", Selected)
-    end,
+    Callback = function(selected) end,
 })
 ```
 
-#### Switcher (Segmented)
+### Switcher (Segmented Control)
+
 ```luau
 Card:AddSwitcher({
-    Name = "ESP Mode",
-    Options = { "Smart ESP", "Manual ESP", "Off" },
-    Default = "Smart ESP",
-    Callback = function(Selected: string)
-        print("Selected mode:", Selected)
+    Name = "Mode",
+    Options = {"Legit", "Rage", "Disabled"},
+    Default = "Legit",
+    Callback = function(option) end,
+})
+```
+
+### Colorpicker
+
+```luau
+Card:AddColorpicker({
+    Name = "Accent Color",
+    Default = Color3.fromRGB(59, 130, 246),
+    Callback = function(color)
+        Onyx:SetAccentColor(color)
     end,
 })
 ```
 
-#### Notifications (Toast)
+### Notifications
+
 ```luau
-OnyxUI:Notify({
-    Title = "Configuration Loaded",
-    Content = "Settings synchronized successfully.",
-    Duration = 3.5,
+Onyx:Notify({
+    Title = "Saved",
+    Content = "Configuration applied",
+    Duration = 3,
     IndicatorStyle = "Pill",
     AccentColor = Color3.fromRGB(40, 200, 64),
 })
 ```
 
----
+## License
+
+MIT
