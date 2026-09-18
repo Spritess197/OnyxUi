@@ -2091,6 +2091,7 @@ local function AttachControlMethods(TargetFrame: Instance, TargetMaid: any, Over
             end
         end
 
+        local Icons = DropdownConfig.Icons or {}
         local DropHeight = DropdownConfig.Height or 30
         local Container = Utility.Create("Frame", {
             Name = Title .. "_Dropdown",
@@ -2133,9 +2134,20 @@ local function AttachControlMethods(TargetFrame: Instance, TargetMaid: any, Over
             Utility.CreatePadding(0, 0, 10, 10),
         })
 
+        local ValueIcon = Utility.Create("ImageLabel", {
+            Name = "ValueIcon",
+            Size = UDim2.fromOffset(16, 16),
+            AnchorPoint = Vector2.new(0, 0.5),
+            Position = UDim2.new(0, 0, 0.5, 0),
+            BackgroundTransparency = 1,
+            Visible = false,
+            Parent = ControlButton,
+        })
+
         local ValueLabel = Utility.Create("TextLabel", {
             Name = "ValueLabel",
             Size = UDim2.new(1, -24, 1, 0),
+            Position = UDim2.new(0, 0, 0, 0),
             BackgroundTransparency = 1,
             Font = Tokens.Typography.FontRegular,
             Text = "",
@@ -2159,7 +2171,7 @@ local function AttachControlMethods(TargetFrame: Instance, TargetMaid: any, Over
             Parent = ControlButton,
         })
 
-        local function FormatSelectionText(): string
+        local function UpdateDisplay()
             local SelectedList = {}
             for _, Opt in ipairs(Options) do
                 if SelectedMap[Opt] then
@@ -2167,12 +2179,29 @@ local function AttachControlMethods(TargetFrame: Instance, TargetMaid: any, Over
                 end
             end
             if #SelectedList == 0 then
-                return "None selected"
+                ValueLabel.Text = "None selected"
+                ValueIcon.Visible = false
+                ValueLabel.Position = UDim2.new(0, 0, 0, 0)
+                ValueLabel.Size = UDim2.new(1, -24, 1, 0)
+                return
             end
-            return table.concat(SelectedList, ", ")
+
+            ValueLabel.Text = table.concat(SelectedList, ", ")
+            local FirstSelected = SelectedList[1]
+            local IconAsset = if not IsMulti and Icons and Icons[FirstSelected] then Icons[FirstSelected] else nil
+            if IconAsset and IconAsset ~= "" then
+                ValueIcon.Image = IconAsset
+                ValueIcon.Visible = true
+                ValueLabel.Position = UDim2.new(0, 22, 0, 0)
+                ValueLabel.Size = UDim2.new(1, -48, 1, 0)
+            else
+                ValueIcon.Visible = false
+                ValueLabel.Position = UDim2.new(0, 0, 0, 0)
+                ValueLabel.Size = UDim2.new(1, -24, 1, 0)
+            end
         end
 
-        ValueLabel.Text = FormatSelectionText()
+        UpdateDisplay()
 
         local IsOpen = false
 
@@ -2248,10 +2277,10 @@ local function AttachControlMethods(TargetFrame: Instance, TargetMaid: any, Over
                 Size = UDim2.new(1, 0, 0, ListHeight),
                 BackgroundTransparency = 1,
                 BorderSizePixel = 0,
-                ScrollBarThickness = 2,
-                ScrollBarImageColor3 = Tokens.Colors.Border,
                 CanvasSize = UDim2.new(0, 0, 0, 0),
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
+                ScrollBarThickness = 3,
+                ScrollBarImageColor3 = Tokens.Colors.TextMuted,
                 Active = true,
                 LayoutOrder = 2,
                 Parent = Popup,
@@ -2282,9 +2311,23 @@ local function AttachControlMethods(TargetFrame: Instance, TargetMaid: any, Over
                     Utility.CreatePadding(0, 0, 6, 6),
                 })
 
+                local HasIcon = Icons and Icons[OptionText] and Icons[OptionText] ~= ""
+                if HasIcon then
+                    Utility.Create("ImageLabel", {
+                        Name = "ItemIcon",
+                        Size = UDim2.fromOffset(16, 16),
+                        AnchorPoint = Vector2.new(0, 0.5),
+                        Position = UDim2.new(0, 0, 0.5, 0),
+                        BackgroundTransparency = 1,
+                        Image = Icons[OptionText],
+                        Parent = ItemBtn,
+                    })
+                end
+
                 local ItemLabel = Utility.Create("TextLabel", {
                     Name = "Label",
-                    Size = UDim2.new(1, -20, 1, 0),
+                    Size = if HasIcon then UDim2.new(1, -44, 1, 0) else UDim2.new(1, -20, 1, 0),
+                    Position = if HasIcon then UDim2.new(0, 22, 0, 0) else UDim2.new(0, 0, 0, 0),
                     BackgroundTransparency = 1,
                     Font = if IsSelected then Tokens.Typography.FontMedium else Tokens.Typography.FontRegular,
                     Text = OptionText,
@@ -2329,7 +2372,7 @@ local function AttachControlMethods(TargetFrame: Instance, TargetMaid: any, Over
                         ItemLabel.Font = if NowSelected then Tokens.Typography.FontMedium else Tokens.Typography.FontRegular
                         ItemLabel.TextColor3 = if NowSelected then Tokens.Colors.Accent else Tokens.Colors.TextSecondary
                         Checkmark.Visible = NowSelected
-                        ValueLabel.Text = FormatSelectionText()
+                        UpdateDisplay()
 
                         local SelectedList = {}
                         for _, Opt in ipairs(Options) do
@@ -2351,7 +2394,7 @@ local function AttachControlMethods(TargetFrame: Instance, TargetMaid: any, Over
                         ItemLabel.Font = Tokens.Typography.FontMedium
                         ItemLabel.TextColor3 = Tokens.Colors.Accent
                         Checkmark.Visible = true
-                        ValueLabel.Text = OptionText
+                        UpdateDisplay()
                         Callback(OptionText)
                         Overlay:ClosePopup()
                     end
@@ -2397,6 +2440,18 @@ local function AttachControlMethods(TargetFrame: Instance, TargetMaid: any, Over
             Maid = DropdownMaid,
         }
 
+        function DropdownObject:SetOptions(NewOptions: { string }, NewIcons: { [string]: string }?)
+            Options = NewOptions
+            if NewIcons ~= nil then
+                Icons = NewIcons
+            end
+            table.clear(SelectedMap)
+            if not IsMulti and #Options > 0 then
+                SelectedMap[Options[1]] = true
+            end
+            UpdateDisplay()
+        end
+
         function DropdownObject:SetSelected(Target: any)
             if IsMulti and typeof(Target) == "table" then
                 table.clear(SelectedMap)
@@ -2407,7 +2462,7 @@ local function AttachControlMethods(TargetFrame: Instance, TargetMaid: any, Over
                 table.clear(SelectedMap)
                 SelectedMap[Target] = true
             end
-            ValueLabel.Text = FormatSelectionText()
+            UpdateDisplay()
         end
 
         function DropdownObject:GetSelected(): any
@@ -2936,6 +2991,7 @@ local function AttachControlMethods(TargetFrame: Instance, TargetMaid: any, Over
             AutomaticSize = Enum.AutomaticSize.Y,
             BackgroundColor3 = CardBg,
             BorderSizePixel = 0,
+            Active = true,
             Parent = TargetFrame,
         }, {
             Utility.CreateCorner(CardCorner),
@@ -3168,7 +3224,7 @@ function Library:CreateWindow(Config: { [string]: any })
     local RootGui = Utility.Create("ScreenGui", {
         Name = "UILibraryRoot",
         ResetOnSpawn = false,
-        DisplayOrder = -1,
+        DisplayOrder = 100,
         IgnoreGuiInset = true,
         ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
     })
@@ -3191,6 +3247,7 @@ function Library:CreateWindow(Config: { [string]: any })
         Position = UDim2.new(0.5, 0, 0.5, 0),
         BackgroundColor3 = Tokens.Colors.WindowBackground,
         BorderSizePixel = 0,
+        Active = true,
         ClipsDescendants = false,
         Parent = RootGui,
     }, {
@@ -3222,6 +3279,7 @@ function Library:CreateWindow(Config: { [string]: any })
         Position = UDim2.fromOffset(0, 0),
         BackgroundColor3 = Tokens.Colors.TopbarBackground,
         BorderSizePixel = 0,
+        Active = true,
         Parent = WindowFrame,
     }, {
         Utility.CreateCorner(Tokens.Radius.Window),
@@ -3342,6 +3400,7 @@ function Library:CreateWindow(Config: { [string]: any })
         Position = UDim2.fromOffset(0, 41),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
+        Active = true,
         ClipsDescendants = true,
         Parent = WindowFrame,
     })
@@ -3352,6 +3411,7 @@ function Library:CreateWindow(Config: { [string]: any })
         Position = UDim2.fromOffset(0, 0),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
+        Active = true,
         Parent = Body,
     })
 
@@ -3609,6 +3669,7 @@ function Library:CreateWindow(Config: { [string]: any })
         Position = UDim2.fromOffset(SidebarWidth + 1, 0),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
+        Active = true,
         Parent = Body,
     })
 
@@ -4260,6 +4321,7 @@ function Library:CreateWindow(Config: { [string]: any })
             CanvasSize = UDim2.new(0, 0, 0, 0),
             AutomaticCanvasSize = Enum.AutomaticSize.Y,
             Visible = false,
+            Active = true,
             Parent = ContentContainer,
         }, {
             Utility.Create("UIPadding", {
