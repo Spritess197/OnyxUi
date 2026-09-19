@@ -2,6 +2,7 @@
 discord: spritess197
 tg: spritess197
 ]]
+
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
